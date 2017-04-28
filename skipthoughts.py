@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Skip-thought vectors
 '''
@@ -76,8 +77,8 @@ def load_tables():
     Load the tables
     """
     words = []
-    utable = numpy.load(path_to_tables + 'utable.npy')
-    btable = numpy.load(path_to_tables + 'btable.npy')
+    utable = numpy.load(path_to_tables + 'utable.npy', encoding="latin1")
+    btable = numpy.load(path_to_tables + 'btable.npy', encoding="latin1")
     f = open(path_to_tables + 'dictionary.txt', 'rb')
     for line in f:
         words.append(line.decode('utf-8').strip())
@@ -248,7 +249,7 @@ def load_params(path, params):
     """
     load parameters
     """
-    pp = numpy.load(path)
+    pp = numpy.load(path, encoding="latin1")
     for kk, vv in params.items():
         if kk not in pp:
             warnings.warn('%s is not in the archive'%kk)
