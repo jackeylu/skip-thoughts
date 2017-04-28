@@ -6,7 +6,7 @@ import numpy as np
 import theano
 import theano.tensor as tensor
 
-import cPickle as pkl
+import pickle as pkl
 import numpy
 import copy
 import os
@@ -23,19 +23,19 @@ import warnings
 
 # push parameters to Theano shared variables
 def zipp(params, tparams):
-    for kk, vv in params.iteritems():
+    for kk, vv in params.items():
         tparams[kk].set_value(vv)
 
 # pull parameters from Theano shared variables
 def unzip(zipped):
     new_params = OrderedDict()
-    for kk, vv in zipped.iteritems():
+    for kk, vv in zipped.items():
         new_params[kk] = vv.get_value()
     return new_params
 
 # get the list of parameters: Note that tparams must be OrderedDict
 def itemlist(tparams):
-    return [vv for kk, vv in tparams.iteritems()]
+    return [vv for kk, vv in tparams.items()]
 
 # make prefix-appended name
 def _p(pp, name):
@@ -57,14 +57,14 @@ def init_params(options):
 # initialize Theano shared variables according to the initial parameters
 def init_tparams(params):
     tparams = OrderedDict()
-    for kk, pp in params.iteritems():
+    for kk, pp in params.items():
         tparams[kk] = theano.shared(params[kk], name=kk)
     return tparams
 
 # load parameters
 def load_params(path, params):
     pp = numpy.load(path)
-    for kk, vv in params.iteritems():
+    for kk, vv in params.items():
         if kk not in pp:
             raise Warning('%s is not in the archive'%kk)
         params[kk] = pp[kk]
@@ -176,7 +176,7 @@ def build_encoder(tparams, options):
 # optimizers
 # name(hyperp, tparams, grads, inputs (list), cost) = f_grad_shared, f_update
 def adam(lr, tparams, grads, inp, cost):
-    gshared = [theano.shared(p.get_value() * numpy.float32(0.), name='%s_grad'%k) for k, p in tparams.iteritems()]
+    gshared = [theano.shared(p.get_value() * numpy.float32(0.), name='%s_grad'%k) for k, p in tparams.items()]
     gsup = [(gs, g) for gs, g in zip(gshared, grads)]
 
     f_grad_shared = theano.function(inp, cost, updates=gsup)
@@ -194,7 +194,7 @@ def adam(lr, tparams, grads, inp, cost):
     fix2 = 1. - b2**(i_t)
     lr_t = lr0 * (tensor.sqrt(fix2) / fix1)
 
-    for p, g in zip(tparams.values(), gshared):
+    for p, g in zip(list(tparams.values()), gshared):
         m = theano.shared(p.get_value() * numpy.float32(0.))
         v = theano.shared(p.get_value() * numpy.float32(0.))
         m_t = (b1 * g) + ((1. - b1) * m)
@@ -223,7 +223,7 @@ def validate_options(options):
 
 # Load a saved model and evaluate the results
 def evaluate(X, saveto, evaluate=False, out=False):
-    print "Loading model..."
+    print("Loading model...")
     with open('%s.pkl'%saveto, 'rb') as f:
         model_options = pkl.load(f)
 
@@ -231,18 +231,18 @@ def evaluate(X, saveto, evaluate=False, out=False):
     params = load_params(saveto, params)
     tparams = init_tparams(params)
 
-    print 'Building encoder'
+    print('Building encoder')
     inps_e, lim, ls = build_encoder(tparams, model_options)
     f_emb = theano.function(inps_e, [lim, ls], profile=False)
 
-    print 'Compute embeddings...'
+    print('Compute embeddings...')
     lim, ls = f_emb(X[1], X[2])
 
     if evaluate:
         (r1, r5, r10, medr) = i2t(lim, ls)
-        print "Image to text: %.1f, %.1f, %.1f, %.1f" % (r1, r5, r10, medr)
+        print("Image to text: %.1f, %.1f, %.1f, %.1f" % (r1, r5, r10, medr))
         (r1i, r5i, r10i, medri) = t2i(lim, ls)
-        print "Text to image: %.1f, %.1f, %.1f, %.1f" % (r1i, r5i, r10i, medri)
+        print("Text to image: %.1f, %.1f, %.1f, %.1f" % (r1i, r5i, r10i, medri))
     if out:
         return lim, ls
 
@@ -283,39 +283,39 @@ def trainer(train, dev, # training and development tuples
     model_options['reload_'] = reload_
 
     model_options = validate_options(model_options)
-    print model_options
+    print(model_options)
 
     # reload options
     if reload_ and os.path.exists(saveto):
-        print "Reloading options"
+        print("Reloading options")
         with open('%s.pkl'%saveto, 'rb') as f:
             model_options = pkl.load(f)
 
-    print 'Building model'
+    print('Building model')
     params = init_params(model_options)
     # reload parameters
     if reload_ and os.path.exists(saveto):
-        print "Reloading model"
+        print("Reloading model")
         params = load_params(saveto, params)
 
     tparams = init_tparams(params)
 
     inps, cost = build_model(tparams, model_options)
 
-    print 'Building encoder'
+    print('Building encoder')
     inps_e, lim, ls = build_encoder(tparams, model_options)
 
-    print 'Building functions'
+    print('Building functions')
     f_cost = theano.function(inps, -cost, profile=False)
     f_emb = theano.function(inps_e, [lim, ls], profile=False)
 
     # gradient computation
-    print 'Computing gradients'
+    print('Computing gradients')
     grads = tensor.grad(cost, wrt=itemlist(tparams))
     lr = tensor.scalar(name='lr')
     f_grad_shared, f_update = eval(optimizer)(lr, tparams, grads, inps, cost)
 
-    print 'Optimization'
+    print('Optimization')
 
     uidx = 0
     estop = False
@@ -354,27 +354,27 @@ def trainer(train, dev, # training and development tuples
             ud_duration = time.time() - ud_start
 
             if numpy.mod(uidx, dispFreq) == 0:
-                print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud_duration
+                print('Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud_duration)
 
             if numpy.mod(uidx, validFreq) == 0:
 
-                print 'Computing ranks...'
+                print('Computing ranks...')
                 lim, ls = f_emb(dev[1], dev[2])
                 (r1, r5, r10, medr) = i2t(lim, ls)
-                print "Image to text: %.1f, %.1f, %.1f, %.1f" % (r1, r5, r10, medr)
+                print("Image to text: %.1f, %.1f, %.1f, %.1f" % (r1, r5, r10, medr))
                 (r1i, r5i, r10i, medri) = t2i(lim, ls)
-                print "Text to image: %.1f, %.1f, %.1f, %.1f" % (r1i, r5i, r10i, medri)
+                print("Text to image: %.1f, %.1f, %.1f, %.1f" % (r1i, r5i, r10i, medri))
 
                 currscore = r1 + r5 + r10 + r1i + r5i + r10i
                 if currscore > curr:
                     curr = currscore
 
                     # Save model
-                    print 'Saving...',
+                    print('Saving...', end=' ')
                     params = unzip(tparams)
                     numpy.savez(saveto, history_errs=history_errs, **params)
                     pkl.dump(model_options, open('%s.pkl'%saveto, 'wb'))
-                    print 'Done'
+                    print('Done')
 
 
 def i2t(images, captions, npts=None):

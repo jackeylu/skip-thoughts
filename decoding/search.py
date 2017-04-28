@@ -27,7 +27,7 @@ def gen_sample(tparams, f_init, f_next, ctx, options, trng=None, k=1, maxlen=30,
     next_state = f_init(ctx)
     next_w = -1 * numpy.ones((1,)).astype('int64')
 
-    for ii in xrange(maxlen):
+    for ii in range(maxlen):
         inps = [next_w, next_state]
         ret = f_next(*inps)
         next_p, next_w, next_state = ret[0], ret[1], ret[2]
@@ -72,7 +72,7 @@ def gen_sample(tparams, f_init, f_next, ctx, options, trng=None, k=1, maxlen=30,
             hyp_scores = []
             hyp_states = []
 
-            for idx in xrange(len(new_hyp_samples)):
+            for idx in range(len(new_hyp_samples)):
                 if new_hyp_samples[idx][-1] == 0:
                     sample.append(new_hyp_samples[idx])
                     sample_score.append(new_hyp_scores[idx])
@@ -96,7 +96,7 @@ def gen_sample(tparams, f_init, f_next, ctx, options, trng=None, k=1, maxlen=30,
     if not stochastic:
         # dump every remaining one
         if live_k > 0:
-            for idx in xrange(live_k):
+            for idx in range(live_k):
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
 
